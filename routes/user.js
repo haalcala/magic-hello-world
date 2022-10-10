@@ -20,7 +20,7 @@ const strategy = new MagicStrategy(async function(user, done) {
     return signup(user, userMetadata, done);
   } else {
     /* Login user if otherwise */
-    return login(user, done);
+    return login({...user, ...existingUser}, done);
   }
 });
 
@@ -57,7 +57,7 @@ const login = async (user, done) => {
 /* Attach middleware to login endpoint */
 router.post("/login", passport.authenticate("magic"), (req, res) => {
   if (req.user) {
-      res.status(200).end('User is logged in.');
+      res.status(200).json(req.user).end();
   } else {
      return res.status(401).end('Could not log user in.');
   }
@@ -90,20 +90,45 @@ router.get("/", async (req, res) => {
       .json(req.user)
       .end();
   } else {
-    return res.status(401).end(`User is not logged in.`);
+    return res.status(401).json({error:`User is not logged in.`}).end();
   }
 });
 
 /* Implement Buy Apple Endpoint */
 router.post("/buy-apple", async (req, res) => {
   if (req.isAuthenticated()) {
+    console.log("req.user:", req.user)
     await users.update(
       { issuer: req.user.issuer },
       { $inc: { appleCount: 1 } }
     );
-    return res.status(200).end();
+    const user = await users.findOne({ issuer: req.user.issuer });
+
+    return res.status(200).json(user).end();
   } else {
-    return res.status(401).end(`User is not logged in.`);
+    return res.status(401).json({error:`User is not logged in.`}).end();
+  }
+});
+
+/* Implement Buy Apple Endpoint */
+router.post("/wallet", async (req, res) => {
+  if (req.isAuthenticated()) {
+    console.log("req.user:", req.user)
+    console.log("req.body:", req.body)
+
+    const wallet_address = req.body.wallet_address
+
+    console.log("wallet_address:",wallet_address)
+
+    await users.update(
+      { issuer: req.user.issuer },
+      { $set: { wallet_address } }
+    );
+    const user = await users.findOne({ issuer: req.user.issuer });
+
+    return res.status(200).json(user).end();
+  } else {
+    return res.status(401).json({error:`User is not logged in.`}).end();
   }
 });
 
@@ -114,7 +139,7 @@ router.post("/logout", async (req, res) => {
     req.logout();
     return res.status(200).end();
   } else {
-    return res.status(401).end(`User is not logged in.`);
+    return res.status(401).json({error:`User is not logged in.`}).end();
   }
 });
 

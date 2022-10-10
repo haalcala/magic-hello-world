@@ -5,6 +5,12 @@ const logger = require("morgan");
 const session = require("express-session");
 const passport = require("passport");
 
+const dotenv = require("dotenv")
+
+dotenv.config()
+
+console.log("process.env", process.env)
+
 const indexRouter = require("./routes/index");
 const userRouter = require("./routes/user");
 
@@ -32,8 +38,8 @@ app.use(
 app.use(passport.initialize());
 app.use(passport.session());
 
-app.use("/", indexRouter);
-app.use("/user", userRouter);
+app.use("/api/v1/", indexRouter);
+app.use("/api/v1/user", userRouter);
 
 const listener = app.listen(8080, function() {
   console.log("Listening on port " + listener.address().port);
